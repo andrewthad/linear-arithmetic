@@ -16,13 +16,14 @@ extra-source-files:  CHANGELOG.md
 library
   exposed-modules:
     Arithmetic.Expr
+    Arithmetic.NatExpr
     Arithmetic.Prop
     Arithmetic.Prop.Conjunction
     Arithmetic.Prop.Cnf
     Arithmetic.Relation
     Arithmetic.Relation.Idl
   build-depends:
-    , base >=4.12 && <5
+    , base >=4.14 && <5
     , primitive
     , containers
     , contiguous >=0.6.4
