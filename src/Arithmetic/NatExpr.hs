@@ -23,6 +23,7 @@ module Arithmetic.NatExpr
   , substituteAll
   , countVars
   , variables
+  , stripCommonTerms
     -- * Compare
   , gte
   , lte
@@ -208,3 +209,31 @@ lte (Expr coeffs1 const1) (Expr coeffs2 const2)
        in case m of
             Nothing -> False
             Just _ -> True
+
+-- | Normalize two expressions that are compared by an equality operator
+-- or an inequality operator. For example, consider the inequality:
+--
+-- > a + 2*b + 5 >= 2*a + 2*b + 4
+--
+-- This inequality is more simply expressed as:
+--
+-- > 1 >= a
+--
+-- That is the simplification that this function performs. Postconditions:
+--
+-- * The result expressions have no common variables.
+-- * The constant terms in at least one of the result expressions
+--   is zero.
+stripCommonTerms :: Ord v => Expr v -> Expr v -> (Expr v, Expr v)
+stripCommonTerms (Expr m0 c0) (Expr m1 c1) =
+  let combined = Merge.merge (Merge.mapMissing $ \_ n -> Left n) (Merge.mapMissing $ \_ n -> Right n)
+        (Merge.zipWithMaybeMatched
+          (\_ d0 d1 -> case compare d0 d1 of
+            EQ -> Nothing
+            GT -> Just $! Left $! d0 - d1
+            LT -> Just $! Left $! d1 - d0
+          )
+        ) m0 m1
+      (lhs, rhs) = Map.mapEither id combined
+      (lconst, rconst) = if c0 >= c1 then (c0 - c1, 0) else (0, c1 - c0)
+   in (Expr lhs lconst, Expr rhs rconst)
